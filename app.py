@@ -1,11 +1,10 @@
 from flask import Flask, render_template, request
 import os
+from ai_engine import run_ai
 
 app = Flask(__name__)
-
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 @app.route("/")
@@ -18,7 +17,7 @@ def upload():
     path = os.path.join(app.config["UPLOAD_FOLDER"], video.filename)
     video.save(path)
 
-    return f"Video uploaded: {video.filename}"
+    result = run_ai(path)
 
-if __name__ == "__main__":
-    app.run()
+    return render_template("result.html", data=result)
+
