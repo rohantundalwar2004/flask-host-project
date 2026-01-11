@@ -1,7 +1,51 @@
-<h1>AI Interview Analyzer</h1>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Interview Analyzer</title>
+</head>
+<body>
 
-<form action="/upload" method="post" enctype="multipart/form-data">
-    <input type="file" name="video" accept="video/*" required>
-    <br><br>
-    <button>Upload & Analyze</button>
-</form>
+<h1>🎤 AI Interview Analyzer</h1>
+
+<button onclick="start()">Start Recording</button>
+<button onclick="stop()">Stop & Analyze</button>
+
+<pre id="result"></pre>
+
+<script>
+let recorder;
+let audioChunks = [];
+
+async function start() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    recorder = new MediaRecorder(stream);
+    recorder.start();
+
+    recorder.ondataavailable = e => {
+        audioChunks.push(e.data);
+    };
+
+    alert("Recording started...");
+}
+
+async function stop() {
+    recorder.stop();
+
+    recorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: "audio/wav" });
+        const form = new FormData();
+        form.append("audio", blob);
+
+        const res = await fetch("/upload", {
+            method: "POST",
+            body: form
+        });
+
+        const data = await res.json();
+        document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+    };
+}
+</script>
+
+</body>
+</html>
