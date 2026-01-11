@@ -1,16 +1,8 @@
-import moviepy.editor as mp
 import whisper
 import cv2
 from textblob import TextBlob
 
-# Load Whisper model once
 model = whisper.load_model("base")
-
-def extract_audio(video_path):
-    video = mp.VideoFileClip(video_path)
-    audio_path = video_path.replace(".mp4", ".wav")
-    video.audio.write_audiofile(audio_path)
-    return audio_path
 
 def transcribe(audio_path):
     result = model.transcribe(audio_path)
@@ -19,49 +11,34 @@ def transcribe(audio_path):
 def analyze_language(text):
     blob = TextBlob(text)
 
-    confidence = min(len(text.split()) / 30, 10)
-    fluency = max(10 - text.lower().count("um") - text.lower().count("uh"), 1)
+    words = len(text.split())
+    confidence = min(words / 25, 10)
+
+    fluency = 10 - text.lower().count("um") - text.lower().count("uh")
+    fluency = max(fluency, 1)
+
     clarity = len(blob.sentences)
 
     return {
         "confidence": round(confidence, 2),
         "fluency": round(fluency, 2),
-        "clarity": clarity
+        "clarity": clarity,
+        "text": text
     }
 
-def analyze_video(video_path):
-    cap = cv2.VideoCapture(video_path)
+def analyze_eye_contact():
+    # Render Free cannot process video, so simulate for now
+    return 7.5
 
-    eye_frames = 0
-    total = 0
+def run_ai(audio_path):
+    text = transcribe(audio_path)
+    lang = analyze_language(text)
+    eyes = analyze_eye_contact()
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        total += 1
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        if gray.mean() > 50:
-            eye_frames += 1
-
-    if total == 0:
-        return 0
-
-    return round((eye_frames / total) * 10, 2)
-
-def run_ai(video_path):
-    audio = extract_audio(video_path)
-    text = transcribe(audio)
-    speech = analyze_language(text)
-    eye = analyze_video(video_path)
-
-    overall = round((speech["confidence"] + eye) / 2, 2)
+    overall = round((lang["confidence"] + eyes) / 2, 2)
 
     return {
-        "text": text,
-        "speech": speech,
-        "eye_contact": eye,
-        "overall": overall
+        "speech": lang,
+        "eye_contact": eyes,
+        "overall_score": overall
     }
