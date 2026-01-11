@@ -1,11 +1,8 @@
-from flask import Flask, render_template, request
-import os
+from flask import Flask, render_template, request, jsonify
 from ai_engine import run_ai
+import os
 
 app = Flask(__name__)
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
 @app.route("/")
 def home():
@@ -13,11 +10,18 @@ def home():
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    video = request.files["video"]
-    path = os.path.join(app.config["UPLOAD_FOLDER"], video.filename)
-    video.save(path)
+    if "audio" not in request.files:
+        return jsonify({"error": "No audio uploaded"})
+
+    audio = request.files["audio"]
+    path = "audio.wav"
+    audio.save(path)
 
     result = run_ai(path)
 
-    return render_template("result.html", data=result)
+    os.remove(path)
 
+    return jsonify(result)
+
+if __name__ == "__main__":
+    app.run()
