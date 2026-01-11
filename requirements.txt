@@ -2,7 +2,5 @@ flask
 gunicorn
 openai-whisper
 opencv-python
-numpy
-moviepy
 textblob
 torch
